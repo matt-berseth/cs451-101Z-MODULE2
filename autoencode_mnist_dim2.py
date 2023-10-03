@@ -2,6 +2,7 @@ import logging
 import os
 import warnings
 
+import joblib
 from sklearn.neural_network import MLPRegressor
 from sklearn.datasets import fetch_openml
 from sklearn.cluster import KMeans
@@ -35,13 +36,14 @@ y = np.loadtxt(os.path.join(".data", "y.txt"))
 X = X.astype("float32") / 255.0
 
 
-# TODO:
 # try some other digits.
+digit = 2
+output_dirpath = os.path.join(".model", f"{digit}")
+os.makedirs(output_dirpath, exist_ok=True)
 
-
-# narrow it down to just 7's
-X = X[y==8]
-logging.info(f"Focusing only on 7's. X.shape = {X.shape}.")
+# narrow it down to just a single digit's
+X = X[y==digit]
+logging.info(f"Focusing only on {digit}'s. X.shape = {X.shape}.")
 
 # what layer does the encoding come from?
 code_layer_n = 3
@@ -57,6 +59,7 @@ autoencoder = MLPRegressor(
 # train the model
 logging.info("Training the auto-encoder ...")
 autoencoder.fit(X, X)
+joblib.dump(autoencoder, os.path.join(output_dirpath, "model.pkl"))
 
 # plot the digits across these 2 dimensions.
 logging.info("Using the trained auto-encoder to encode the original data ...")
@@ -67,7 +70,7 @@ logging.info(f"After encoding, X_encoded_2d.shape = {X_encoded_2d.shape}.")
 plt.close("all")
 plt.scatter(X_encoded_2d[:, 0], X_encoded_2d[:, 1], s=50)
 plt.title("2D MNIST Data")
-plt.savefig(f"./autoencoder-mnist-dim2d-data.png")
+plt.savefig(os.path.join(output_dirpath, "autoencoder-mnist-dim2d-data.png"))
 
 
 # use k-means to cluser these images into k-clusters.
@@ -87,7 +90,7 @@ plt.plot(cluster_range, wcss_list, marker="o")
 plt.title("The Elbow Method")
 plt.xlabel("Number of clusters")
 plt.ylabel("WCSS")
-plt.savefig("autoencoder-mnist-dim2d-elbow.png")
+plt.savefig(os.path.join(output_dirpath, "autoencoder-mnist-dim2d-elbow.png"))
 
 # generate images from the cluster centroids
 # Perform K-means clustering on 2D data
@@ -104,7 +107,7 @@ plt.close("all")
 plt.scatter(X_encoded_2d[:, 0], X_encoded_2d[:, 1], c=labels, s=50, cmap="viridis")
 plt.scatter(cluster_centers[:, 0], cluster_centers[:, 1], c="red", s=100, alpha=0.75)
 plt.title("K-means Clustering on 2D MNIST Data")
-plt.savefig(f"autoencoder-mnist-dim2d-kmeans.png")
+plt.savefig(os.path.join(output_dirpath, "autoencoder-mnist-dim2d-kmeans.png"))
 
 for i in range(n_clusters):
     centroid = np.array(cluster_centers[i]).reshape(1, 2)
@@ -114,8 +117,7 @@ for i in range(n_clusters):
     plt.close("all")
     plt.imshow(x0, cmap=matplotlib.cm.binary, interpolation="nearest")
     plt.axis("off")
-    plt.savefig(f"autoencoder-mnist-dim2d-kmeans-cluster-{int(i)}.png")
-
+    plt.savefig(os.path.join(output_dirpath, f"autoencoder-mnist-dim2d-kmeans-cluster-{int(i)}.png"))
 
 # plot some extreme points:
 code = np.array([3.5, 8.0]).reshape(1, 2)
@@ -124,4 +126,4 @@ x0 = x0.reshape(28, 28) # reshape into a 28x28 matrix
 plt.close("all")
 plt.imshow(x0, cmap=matplotlib.cm.binary, interpolation="nearest")
 plt.axis("off")
-plt.savefig(f"autoencoder-mnist-dim2d-kmeans-cluster-extreme-1.png")
+plt.savefig(os.path.join(output_dirpath, "autoencoder-mnist-dim2d-kmeans-cluster-extreme-1.png"))
